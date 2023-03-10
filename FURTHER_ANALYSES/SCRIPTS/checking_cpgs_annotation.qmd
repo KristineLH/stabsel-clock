@@ -1,0 +1,953 @@
+---
+title: "Gestational age clock - checking CpGs and their genomic annotation"
+author: "Julia Romanowska"
+date: "`r Sys.Date()`"
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+library(karyoploteR)
+library(org.Hs.eg.db)
+library(Biobase)
+library(AnnotationDbi) # needed by one of the functions
+library(here)
+library(ensemblfetchR) # install from: https://github.com/jromanowska/ensemblfetchR
+library(biomaRt)
+library(tidyverse)
+
+# file names:
+regul_regs_file <- here("DATA", "all_regul_regs.rds")
+genes_regs_file <- here("DATA", "all_genes_regs.rds")
+genes_regs_min_clock_pos_file <- here("DATA", "genes_min_clock_pos.rds")
+genes_regs_other_pos_file <- here("DATA", "genes_other_pos.rds")
+```
+
+## Read data
+
+Here are all the CpGs:
+
+```{r}
+cpgs_stable <- suppressMessages(read_csv2(
+	here("DATA", "3_stabsel_cpgs_anno.csv"),
+	show_col_types = FALSE
+))
+
+cpgs_stable_tidy <- cpgs_stable %>%
+	rename(min_clock = '6_cpg_clock') %>%
+	select(cpg:min_clock, CHR, MAPINFO) %>%
+	mutate(
+		CHR = as.factor(CHR)
+	)
+
+cpgs_stable_tidy_GRanges <- makeGRangesFromDataFrame(
+		as.data.frame(cpgs_stable_tidy) %>%
+			select(seqnames = CHR, start = MAPINFO, everything()) %>%
+			mutate(
+				end = start + 1,
+				seqnames = paste0("chr", seqnames)
+			),
+		keep.extra.columns = TRUE
+	)
+
+DT::datatable(
+	cpgs_stable_tidy %>% arrange(CHR, MAPINFO),
+	colnames = c("CpG ID", "probability of selection", "in minimal clock?",
+							 "chromosome", "position")
+)
+```
+
+These were distributed among chromosomes quite equally:
+
+```{r}
+cpgs_distrib_chrom <- cpgs_stable_tidy %>% janitor::tabyl(CHR) %>%
+		arrange(desc(percent))
+chroms_no_cpgs <- setdiff(1:22, cpgs_distrib_chrom$CHR)
+
+knitr::kable(
+	cpgs_distrib_chrom %>%
+		mutate(percent = percent*100),
+	col.names = c("chromosome", "no. of CpGs", "percent")
+)
+```
+
+The chromosomes without any CpGs were: `r chroms_no_cpgs`.
+
+## Genomic annotation
+
+> All the information and chromosome positions are based on genome version GRCh37.
+
+### Regulatory regions
+
+I've fetched regulatory regions where the CpGs were localized, from ensembl,
+with the use of {biomaRt} package. Next, I've selected only the regions for
+which there was measured activitiy in any cord blood tissue, as indicated by
+histone modifications and/or DNase1 activity.
+
+```{r}
+regul_regs_all <- readRDS(regul_regs_file)
+regul_regs <- regul_regs_all %>%
+	filter(str_detect(epigenome_name, "CB"))
+
+knitr::kable(
+	regul_regs %>%
+		distinct(epigenome_name, epigenome_description),
+	caption = "All epigenomes (tissues)"
+)
+
+DT::datatable(
+	regul_regs %>%
+		select(regulatory_stable_id, starts_with("chromosome_"),
+						 feature_type_name, cpg_id) %>%
+		distinct() %>%
+		left_join(
+			cpgs_stable_tidy %>% select(cpg, min_clock),
+			by = c("cpg_id" = "cpg")
+		),
+	colnames = c("ensembl ID", "chrom.", "position start", "position end",
+							 "region type", "CpG ID", "in minimal clock?")
+)
+```
+
+All of the regions contained only one CpG, which shows that the CpGs are
+independent of one another.
+
+```{r regul_regs_stat}
+regul_regs_per_cpg <- regul_regs %>%
+	distinct(regulatory_stable_id, cpg_id) %>%
+	count(regulatory_stable_id, sort = TRUE)
+knitr::kable(
+	regul_regs_per_cpg
+)
+
+regul_type_per_cpg <- regul_regs %>%
+	distinct(regulatory_stable_id, cpg_id, feature_type_name) %>%
+	count(feature_type_name, sort = TRUE)
+```
+
+The CpGs were mostly in `r regul_type_per_cpg %>% head(1) %>% pull(feature_type_name)`.
+
+```{r regul_regs_stat_2}
+knitr::kable(regul_type_per_cpg)
+```
+
+Here's how many of the regulatory regions are in each activity category in
+various cells:
+
+```{r regul_regs_activity}
+regul_regs %>%
+	distinct(regulatory_stable_id, activity, epigenome_name,
+					 epigenome_description, cpg_id) %>%
+	janitor::tabyl(epigenome_name, activity)
+```
+
+
+#### Minimal clock
+
+Here are the regulatory regions annotated to CpGs from the minimal clock:
+
+```{r}
+regul_regs_min_clock <- regul_regs %>%
+		right_join(cpgs_stable_tidy %>% filter(min_clock), by = c("cpg_id" = "cpg"))
+knitr::kable(
+	regul_regs_min_clock %>%
+		distinct(regulatory_stable_id, feature_type_name, cpg_id)
+)
+```
+
+When I checked what specific genes each of the regulatory regions control, I've
+found that some of them had other IDs in the newer version of ensembl (GRCh38):
+
+```{r}
+old_to_new_regul_regs_id <- suppressMessages(
+	read_csv(here("DATA", "old_new_regul_regs_ids.csv"), show_col_types = FALSE)
+)
+knitr::kable(old_to_new_regul_regs_id)
+```
+
+The check for which genes the regions control was done by manually searching
+for the ensembl ID in [GeneCards](https://www.genecards.org/) - each gene
+card contains information from
+[GeneHancer](https://academic.oup.com/database/article/2017/1/bax028/3737828/GeneHancer-genome-wide-integration-of-enhancers),
+e.g., [_SLC14A2_ gene](https://www.genecards.org/cgi-bin/carddisp.pl?gene=SLC14A2&keywords=ENSR00001017833#genomic_location).
+
+```{r genehancer_info}
+genehancer_info_min_clock <- suppressMessages(
+	read_csv(here("DATA", "regul_regs_gene_targets_min_clock.csv"),
+					 show_col_types = FALSE)
+) %>%
+	# some regulatory stable IDs need to be translated back to GRCh37
+	left_join(
+		old_to_new_regul_regs_id %>%
+			filter(!is.na(ensembl_GRCh38_id)),
+		by = c("regulatory_stable_id_GRCh38" = "ensembl_GRCh38_id")
+	) %>%
+	mutate(ensembl_GRCh37_id = if_else(
+		is.na(ensembl_GRCh37_id),
+		regulatory_stable_id_GRCh38,
+		ensembl_GRCh37_id
+	)) %>%
+	select(regulatory_stable_id_GRCh38,
+				 regulatory_stable_id_GRCh37 = ensembl_GRCh37_id,
+				 genes, gene_ensembl_ID_GRCh37 = ensembl_ID_GRCh37)
+
+knitr::kable(genehancer_info_min_clock)
+
+all_genes_controlled_min_clock <- genehancer_info_min_clock %>%
+	filter(!is.na(genes)) %>%
+	pull(genes)
+all_ensembl_ids_controlled_min_clock <- genehancer_info_min_clock %>%
+	filter(!is.na(gene_ensembl_ID_GRCh37)) %>%
+	pull(gene_ensembl_ID_GRCh37)
+
+writeLines(
+	all_genes_controlled_min_clock,
+	con = here("DATA", "genes_controlled_min_clock.txt"),
+	sep = "\n"
+)
+```
+
+#### Plot regulation map
+
+```{r regul_map_plot}
+#| fig-width: 12
+#| fig-height: 8
+
+# get positions of genes controlled by the regul.regs
+if(!file.exists(genes_regs_min_clock_pos_file)){
+	genes_pos_control_min_clock <- grabGenesPositions(
+		gene_symbols = all_ensembl_ids_controlled_min_clock,
+		filter_name = "ensembl_gene_id",
+		attribs = c('chromosome_name', 'start_position', 'end_position',
+								'ensembl_gene_id', 'hgnc_symbol'),
+		genome_ver = "37"
+	)
+	
+	saveRDS(genes_pos_control_min_clock, genes_regs_min_clock_pos_file)
+} else {
+	genes_pos_control_min_clock <- readRDS(genes_regs_min_clock_pos_file)
+}
+
+# extract info about the regulatory regions that will match the order of the 
+#   genes that each region is controling
+regul_regs_control_genes <- genes_pos_control_min_clock %>%
+	select(ensembl_gene_id) %>%
+	left_join(
+		genehancer_info_min_clock %>%
+			left_join(
+				regul_regs_min_clock %>%
+					select(starts_with("chromosome"), regulatory_stable_id,
+								 feature_type_name) %>%
+					distinct(),
+				by = c("regulatory_stable_id_GRCh37" = "regulatory_stable_id")
+			) %>%
+			select(starts_with("chromosome"), everything()) %>%
+			select(-regulatory_stable_id_GRCh38),
+		by = c("ensembl_gene_id" = "gene_ensembl_ID_GRCh37")
+	) %>%
+	select(starts_with("chromosome"), everything())
+
+# FUNCTION FOR PLOTTING:
+# PARAMETERS:
+#  - chr - number: which chromosome to plot?
+#  - cpgs - GRanges object: CpGs to plot (needs to contain meta-column named
+#           'cpg' with CpG IDs)
+#  - regul_regs - GRanges object: regulatory regions (the order should match
+#          the order in 'genes' object!)
+#  - genes - GRanges object: genes controlled by specific regulatory regions
+plot_regul_regs_control <- function(chr, cpgs, regul_regs, genes){
+	unique_regul_regs <- as.data.frame(regul_regs) %>%
+		select(seqnames:end, regulatory_stable_id_GRCh37) %>%
+		distinct() %>% toGRanges()
+
+	zoom_region <- range(
+		c(start(unique_regul_regs), end(unique_regul_regs),
+			start(genes), end(genes))
+	)
+	
+	cur_genes_transcripts <- grabGenes(
+	 	as.data.frame(genes) %>%
+	 		select(chromosome_name = seqnames, start, end) %>%
+	 		mutate(chromosome_name = as.character(
+	 			levels(chromosome_name)[chromosome_name]
+	 			)
+	 		)
+	)
+	# invisible(dev.off())
+
+	pp <- getDefaultPlotParams(plot.type = 2)
+	pp$data1height <- 600
+	pp$data2height <- 400
+	pp$topmargin <- 5
+	pp$bottommargin <- 0
+	pp$ideogramheight <- 25
+	
+	cpgs_label_color <- "#ca0020"
+	regul_reg_label_color <- "#0571b0"
+	
+	kp <- plotKaryotype(
+		genome = "hg19",
+		chromosomes = paste0("chr", chr),
+		zoom = toGRanges(data.frame(
+			paste0("chr", chr),
+			zoom_region[1] - 10000,
+			zoom_region[2] + 10000
+			)),
+		plot.type = 2,
+		plot.params = pp
+	)
+	kpAddBaseNumbers(
+		kp,
+		tick.dist = diff(zoom_region)%/%10,
+		add.units = TRUE,
+		cex = 0.8, 
+	)
+	# mark CpGs
+	kpPlotMarkers(
+		kp,
+		data = cpgs,
+		labels = cpgs$cpg,
+		text.orientation = "horizontal",
+		cex = 1.0,
+		r1 = 1.2,
+		# ignore.chromosome.ends = TRUE,
+		label.color = cpgs_label_color,
+		line.color = cpgs_label_color,
+		marker.parts = c(0.4, 0.5, 0.1),
+		label.dist = 0.00001,
+		max.iter = 10000
+	)
+	kpAddLabels(
+		kp,
+		labels = "CpGs",
+		r0 = 0.9, r1 = 0.95,
+		col = cpgs_label_color,
+		cex = 1.0
+	)
+	# plot regulatory regions
+	kpPlotMarkers(
+		kp,
+		data = unique_regul_regs,
+		labels = unique_regul_regs$regulatory_stable_id_GRCh37,
+		text.orientation = "horizontal",
+		r1 = 1.1,
+		cex = 0.8,
+		# ignore.chromosome.ends = TRUE,
+		label.color = regul_reg_label_color,
+		line.color = regul_reg_label_color,
+		marker.parts = c(0.4, 0.5, 0.1),
+		label.dist = 0.00001,
+		max.iter = 10000
+	)
+	kpPlotRegions(
+		kp,
+		data = unique_regul_regs,
+		r0 = 0.7,
+		r1 = 0.8,
+		col = regul_reg_label_color
+	)
+	kpAddLabels(
+		kp,
+		labels = "regulatory\n regions",
+		col = regul_reg_label_color,
+		r0 = 0.7, r1 = 0.85,
+		cex = 1.0
+	)
+	# plot genes
+	kpPlotGenes(
+	# kpPlotRegions(
+		kp,
+		data = cur_genes_transcripts[[1]],
+		plot.transcripts = FALSE,
+		data.panel = 1,
+		add.gene.names = FALSE,
+		r1 = 0.3
+	)
+	kpAddLabels(
+		kp,
+		labels = "genes",
+		r0 = 0.15, r1 = 0.3,
+		cex = 1.0
+	)
+	kpPlotMarkers(
+		kp,
+		data = genes,
+		labels = genes$hgnc_symbol,
+		cex = 0.8,
+		r1 = 0.5,
+		text.orientation = "vertical",
+		clipping = FALSE
+	)
+	# plot genes that are controlled
+	kpPlotLinks(
+		kp,
+		data = regul_regs,
+		data2 = genes,
+		col = alpha("#92c5de", 0.4),
+		data.panel = 2,
+		r0 = 0.05
+	)
+}
+
+walk(
+	unique(regul_regs_control_genes$chromosome_name),
+	function(chrom){
+		# extract the info for this chromosome:
+		cur_regul_regs <- regul_regs_control_genes %>%
+			filter(chromosome_name == chrom)
+		cur_genes <- genes_pos_control_min_clock %>%
+			filter(chromosome_name == chrom)
+		cur_cpgs <- cpgs_stable_tidy_GRanges[
+			cpgs_stable_tidy$min_clock &
+				seqnames(cpgs_stable_tidy_GRanges) == paste0("chr", chrom),
+			]
+
+		
+	# this form is needed for plotting:
+	cur_regul_regs_GRanges <- makeGRangesFromDataFrame(
+			as.data.frame(cur_regul_regs) %>%
+				select(
+					seqnames = chromosome_name,
+					start = chromosome_start,
+					end = chromosome_end,
+					everything()) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames)
+				),
+			keep.extra.columns = TRUE
+		)
+	cur_genes_GRanges <- makeGRangesFromDataFrame(
+			as.data.frame(cur_genes) %>%
+				select(
+					seqnames = chromosome_name,
+					start = start_position,
+					end = end_position,
+					everything()) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames),
+					hgnc_symbol = if_else(
+						hgnc_symbol == "",
+						ensembl_gene_id,
+						hgnc_symbol
+					)
+				),
+			keep.extra.columns = TRUE
+		)
+	
+	plot_regul_regs_control(
+		chr = chrom,
+		cpgs = cur_cpgs,
+		regul_regs = cur_regul_regs_GRanges,
+		genes = cur_genes_GRanges
+	)
+})
+```
+
+#### Other CpGs, from full clock
+
+```{r}
+regul_regs_other <- regul_regs %>%
+		right_join(
+			cpgs_stable_tidy %>%
+			 	filter(!min_clock),
+			by = c("cpg_id" = "cpg")
+		)
+```
+
+```{r genehancer_info_other}
+genehancer_info_other <- suppressMessages(
+	read_csv(here("DATA", "regul_regs_gene_targets_other.csv"),
+					 show_col_types = FALSE)
+) %>%
+	# some regulatory stable IDs need to be translated back to GRCh37
+	left_join(
+		old_to_new_regul_regs_id %>%
+			filter(!is.na(ensembl_GRCh38_id)),
+		by = c("regulatory_stable_id_GRCh38" = "ensembl_GRCh38_id")
+	) %>%
+	mutate(ensembl_GRCh37_id = if_else(
+		is.na(ensembl_GRCh37_id),
+		regulatory_stable_id_GRCh38,
+		ensembl_GRCh37_id
+	)) %>%
+	select(regulatory_stable_id_GRCh38,
+				 regulatory_stable_id_GRCh37 = ensembl_GRCh37_id,
+				 genes, gene_ensembl_ID_GRCh37 = ensembl_ID_GRCh37)
+
+DT::datatable(genehancer_info_other)
+
+all_genes_controlled_other <- genehancer_info_other %>%
+	filter(!is.na(genes)) %>%
+	pull(genes)
+all_ensembl_ids_controlled_other <- genehancer_info_other %>%
+	filter(!is.na(gene_ensembl_ID_GRCh37)) %>%
+	pull(gene_ensembl_ID_GRCh37)
+
+writeLines(
+	unique(all_genes_controlled_other),
+	con = here("DATA", "genes_controlled_other_clock.txt"),
+	sep = "\n"
+)
+```
+
+#### Plot regulation map
+
+```{r regul_map_plot_other,warning = FALSE}
+#| fig-width: 12
+#| fig-height: 8
+
+# get positions of genes controlled by the regul.regs
+if(!file.exists(genes_regs_other_pos_file)){
+	genes_pos_control_other <- grabGenesPositions(
+		gene_symbols = all_ensembl_ids_controlled_other,
+		filter_name = "ensembl_gene_id",
+		attribs = c('chromosome_name', 'start_position', 'end_position',
+								'ensembl_gene_id', 'hgnc_symbol'),
+		genome_ver = "37"
+	)
+	
+	saveRDS(genes_pos_control_other, genes_regs_other_pos_file)
+} else {
+	genes_pos_control_other <- readRDS(genes_regs_other_pos_file)
+}
+
+# extract info about the regulatory regions that will match the order of the 
+#   genes that each region is controling
+regul_regs_control_genes_other <- genes_pos_control_other %>%
+	select(ensembl_gene_id) %>%
+	left_join(
+		genehancer_info_other %>%
+			left_join(
+				regul_regs_other %>%
+					select(starts_with("chromosome"), regulatory_stable_id,
+								 feature_type_name) %>%
+					distinct(),
+				by = c("regulatory_stable_id_GRCh37" = "regulatory_stable_id")
+			) %>%
+			select(starts_with("chromosome"), everything()) %>%
+			select(-regulatory_stable_id_GRCh38),
+		by = c("ensembl_gene_id" = "gene_ensembl_ID_GRCh37")
+	) %>%
+	select(starts_with("chromosome"), everything())
+
+walk(
+	cpgs_stable_tidy %>%
+		filter(!min_clock) %>%
+		distinct(cpg) %>%
+		pull(),
+	function(cur_cpg){
+		cat("cur CpG: ", cur_cpg, "\n")
+		
+		cur_cpg_info <- cpgs_stable_tidy %>%
+			filter(cpg == cur_cpg)
+		chrom <- as.numeric(levels(cur_cpg_info$CHR)[cur_cpg_info$CHR])
+		# extract the info for this chromosome:
+		cur_regul_regs_other <- regul_regs_other %>%
+			filter(cpg_id == cur_cpg) %>%
+			select(regulatory_stable_id:feature_type_name, cpg_id:MAPINFO) %>%
+			distinct()
+		cur_regul_regs <- regul_regs_control_genes_other %>%
+			filter(regulatory_stable_id_GRCh37 %in% cur_regul_regs_other$regulatory_stable_id) %>%
+			distinct()
+		cur_genes <- genes_pos_control_other %>%
+			filter(ensembl_gene_id %in% cur_regul_regs$ensembl_gene_id)
+		cur_cpgs <- cpgs_stable_tidy_GRanges[
+			cpgs_stable_tidy_GRanges$cpg == cur_cpg, 
+		]
+		
+		if(nrow(cur_regul_regs) == 0){
+			cat("   no regulative regions here!\n\n")
+			return(NULL)
+		}
+
+	# this form is needed for plotting:
+	cur_regul_regs_GRanges <- makeGRangesFromDataFrame(
+			as.data.frame(cur_regul_regs) %>%
+				select(
+					seqnames = chromosome_name,
+					start = chromosome_start,
+					end = chromosome_end,
+					everything()) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames)
+				),
+			keep.extra.columns = TRUE
+		)
+	cur_genes_GRanges <- makeGRangesFromDataFrame(
+			as.data.frame(cur_genes) %>%
+				select(
+					seqnames = chromosome_name,
+					start = start_position,
+					end = end_position,
+					everything()) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames),
+					hgnc_symbol = if_else(
+						hgnc_symbol == "",
+						ensembl_gene_id,
+						hgnc_symbol
+					)
+				),
+			keep.extra.columns = TRUE
+		)
+	
+	plot_regul_regs_control(
+		chr = chrom,
+		cpgs = cur_cpgs,
+		regul_regs = cur_regul_regs_GRanges,
+		genes = cur_genes_GRanges
+	)
+})
+```
+
+### Genes
+
+```{r}
+genes_regs <- readRDS(genes_regs_file)
+DT::datatable(
+	genes_regs %>%
+		mutate(
+			gene_position =
+				paste0(chromosome_name, ":", start_position, "-", end_position),
+			.after = ensembl_gene_id
+		) %>%
+		select(ensembl_gene_id, gene_position, external_gene_name,
+					 description, cpg_id) %>%
+		left_join(
+			cpgs_stable_tidy %>%
+				select(cpg_id = cpg, min_clock)
+		),
+	colnames = c("ensembl ID", "position", "gene name", "description", "CpG ID",
+							 "is in minimal clock?")
+)
+```
+
+## Plot annotation
+
+```{r}
+#| fig-width: 8
+#| fig-height: 12
+regul_regs_GRanges <- makeGRangesFromDataFrame(
+		as.data.frame(
+			regul_regs %>%
+				select(
+					seqnames = chromosome_name,
+					start = chromosome_start,
+					end = chromosome_end,
+					everything()) %>%
+				distinct(seqnames, start, end, regulatory_stable_id, feature_type_name) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames)
+				)
+			),
+		keep.extra.columns = TRUE
+	)
+
+genes_regs_GRanges <- makeGRangesFromDataFrame(
+		as.data.frame(
+			genes_regs %>%
+				select(
+					seqnames = chromosome_name,
+					start = start_position,
+					end = end_position,
+					everything()) %>%
+				distinct(seqnames, start, end, ensembl_gene_id, external_gene_name) %>%
+				mutate(
+					seqnames = paste0("chr", seqnames)
+				)
+			),
+		keep.extra.columns = TRUE
+	)
+
+pp <- getDefaultPlotParams(plot.type = 2)
+pp$data1height <- 300
+pp$data2height <- 600
+kp <- plotKaryotype(
+	genome = "hg19",
+	chromosomes = "autosomal",
+	plot.type = 2,
+	plot.params = pp
+)
+kpPlotMarkers(
+	kp,
+	data = cpgs_stable_tidy_GRanges,
+	labels = cpgs_stable_tidy$cpg,
+	text.orientation = "horizontal",
+	r1 = 0.5,
+	cex = 0.5,
+	# ignore.chromosome.ends = TRUE,
+	label.color = "orange",
+	line.color = "orange",
+	marker.parts = c(0.4, 0.5, 0.1),
+	label.dist = 0.00001,
+	max.iter = 10000
+)
+# mark those CpGs that are in the minimal set
+kpPlotMarkers(
+	kp,
+	data = cpgs_stable_tidy_GRanges[cpgs_stable_tidy$min_clock,],
+	labels = cpgs_stable_tidy %>%
+		filter(min_clock) %>% pull(cpg),
+	text.orientation = "horizontal",
+	r1 = 0.5,
+	cex = 0.5,
+	# ignore.chromosome.ends = TRUE,
+	label.color = "red",
+	line.color = "red",
+	marker.parts = c(0.4, 0.5, 0.1),
+	label.dist = 0.00001,
+	max.iter = 10000
+)
+# plot background for regulatory regions and genes
+kpDataBackground(
+	kp,
+	r0 = 0.5,
+	r1 = 1.1,
+	data.panel = 2,
+	color = "gray80"
+)
+kpDataBackground(
+	kp,
+	r0 = 0,
+	r1 = 0.6,
+	data.panel = 2,
+	color = "#DEFFD4"
+)
+# plot regulatory regions
+kpPlotMarkers(
+	kp,
+	data = regul_regs_GRanges,
+	labels = regul_regs_GRanges$feature_type_name,
+	text.orientation = "horizontal",
+	data.panel = 2,
+	r1 = 0.3,
+	cex = 0.5,
+	# ignore.chromosome.ends = TRUE,
+	label.color = "darkgreen",
+	line.color = "darkgreen",
+	marker.parts = c(0.4, 0.5, 0.1),
+	label.dist = 0.00001,
+	max.iter = 10000
+)
+# plot regulatory regions
+kpPlotMarkers(
+	kp,
+	data = genes_regs_GRanges,
+	labels = genes_regs_GRanges$external_gene_name,
+	text.orientation = "horizontal",
+	data.panel = 2,
+	r1 = 1,
+	cex = 0.5,
+	# ignore.chromosome.ends = TRUE,
+	label.color = "black",
+	line.color = "black",
+	marker.parts = c(0.4, 0.5, 0.1),
+	label.dist = 0.00001,
+	max.iter = 10000
+)
+
+```
+
+## Pathways
+
+### Minimal clock
+
+I've checked all the genes that are begin regulated by the CpGs in minimal clock
+against pathways in [Reactome](https://reactome.org/).
+
+```{r, warning=FALSE}
+reactome_prot_found_genes <- read_csv(
+	here("RESULTS", "reactome_min_clock_mapping.csv"),
+	show_col_types = FALSE
+)
+n_genes_controlled_min_clock <- length(all_genes_controlled_min_clock)
+```
+
+Out of `r n_genes_controlled_min_clock` genes controlled by the regulatory
+regions of the minimal clock, `r nrow(reactome_prot_found_genes)` were found
+in Reactome:
+
+```{r}
+knitr::kable(reactome_prot_found_genes)
+```
+
+> These genes/proteins belong to pathways within _metabolism_ and _organelle
+> biogenesis_:
+
+```{r}
+reactome_results <- suppressMessages(
+	read_csv(here("RESULTS", "reactome_min_clock_result.csv"))
+)
+DT::datatable(
+	reactome_results %>%
+		select(-`Reactions ratio`, -`Found reaction identifiers`,
+					 -starts_with("Species"), -`Entities ratio`)
+)
+```
+
+Details of the pathways can be found in [the detailed report](RESULTS/reactome_all_genes_regul_min_clock_report.pdf).
+
+### Full clock
+
+I've checked all the genes that are begin regulated by the CpGs in full clock
+against pathways in [Reactome](https://reactome.org/).
+
+```{r, warning=FALSE}
+reactome_prot_found_genes_full_clock <- read_csv(
+	here("RESULTS", "reactome_full_clock_mapping.csv"),
+	show_col_types = FALSE
+)
+n_genes_controlled_full_clock <- length(all_genes_controlled_other) +
+	n_genes_controlled_min_clock
+```
+
+Out of `r n_genes_controlled_full_clock` genes controlled by the regulatory
+regions of the minimal clock, `r nrow(reactome_prot_found_genes_full_clock)` were found
+in Reactome:
+
+```{r}
+DT::datatable(reactome_prot_found_genes_full_clock)
+```
+
+> These genes/proteins belong to pathways within _immune system_, _programmed
+> cell death_, _cellular responses to stimuli_, etc.:
+
+```{r}
+reactome_results_full_clock <- suppressMessages(
+	read_csv(here("RESULTS", "reactome_full_clock_result.csv"))
+)
+DT::datatable(
+	reactome_results_full_clock %>%
+		select(-`Reactions ratio`, -`Found reaction identifiers`,
+					 -starts_with("Species"), -`Entities ratio`)
+)
+```
+
+Details of the pathways can be found in [the detailed report](RESULTS/reactome_all_genes_regul_full_clock_report.pdf).
+
+{{< pagebreak >}}
+
+## EWAS databases
+
+I have searched these databases:
+
+- [EWAS platform](https://ngdc.cncb.ac.cn/ewas/atlas)
+- [EWAS catalog](http://ewascatalog.org/)
+
+```{r read_database_data, message=FALSE}
+ewas_catalog_assoc <- read_delim(
+	here("DATA", "ewascatalog-results.txt.gz"),
+	delim = "\t"
+)
+ewas_catalog_studies <- read_delim(
+	here("DATA", "ewascatalog-studies.txt.gz"),
+	delim = "\t"
+)
+ewas_atlas_assoc <- read_delim(
+	here("DATA", "EWAS_Atlas_associations.tsv"),
+	delim = "\t"
+)
+
+stable_cpgs_in_ewas_catalog <- cpgs_stable_tidy %>%
+	left_join(
+		ewas_catalog_assoc,
+		by = c("cpg" = "CpG"),
+		multiple = "all"
+	) %>%
+	left_join(
+		ewas_catalog_studies,
+		by = "StudyID"
+	)
+
+stable_cpgs_in_ewas_atlas <- cpgs_stable_tidy %>%
+	left_join(
+		ewas_atlas_assoc %>%
+			select(-Association_ID),
+		by = c("cpg" = "probe_ID"),
+		multiple = "all"
+	) %>%
+	filter(!(PMID %in% stable_cpgs_in_ewas_catalog$PMID))
+
+stable_cpgs_all_evidence <- bind_rows(
+	stable_cpgs_in_ewas_catalog %>%
+		select(
+			cpg:MAPINFO, Beta, P, PMID, Trait, StudyID
+		) %>%
+		add_column(source = "EWAS_catalog"),
+	stable_cpgs_in_ewas_atlas %>%
+		select(
+			cpg:MAPINFO, Beta = effect_size, P = p_value, PMID, Trait = trait,
+			StudyID = study_ID
+		) %>%
+		mutate(PMID = as.character(PMID)) %>%
+		add_column(source = "EWAS_atlas")
+) %>%
+	mutate(
+		Trait = case_when(
+			Trait == "body mass index (BMI)" ~ "BMI",
+			Trait == "maternal smoking" ~ "Prenatal smoke exposure",
+			Trait == "smoking" ~ "Smoking",
+			Trait == "gestational age" ~ "Gestational age",
+			Trait == "age" ~ "Age",
+			Trait == "Maternal smoking in pregnancy" ~ "Prenatal smoke exposure",
+			Trait == "sex" ~ "Sex",
+			Trait == "Crohn's disease (CD)" ~ "Crohn's disease",
+			Trait == "preeclampsia" ~ "Preeclampsia",
+			Trait == "aging" ~ "Ageing",
+			TRUE ~ Trait
+		)
+	)
+```
+
+EWAS catalog found `r length(unique(stable_cpgs_in_ewas_catalog$StudyID))`
+unique studies where there was any association with any of the
+`r stable_cpgs_in_ewas_catalog %>% filter(!is.na(StudyID)) %>% distinct(cpg) %>% nrow()` stable CpGs.
+
+EWAS Atlas found `r length(unique(stable_cpgs_in_ewas_atlas$study_ID))`
+unique studies where there was any association with any of the
+`r stable_cpgs_in_ewas_atlas %>% filter(!is.na(study_ID)) %>% distinct(cpg) %>% nrow()` stable CpGs.
+
+Here are all the results:
+
+```{r}
+DT::datatable(
+	stable_cpgs_all_evidence
+)
+```
+
+These are the traits found:
+
+```{r}
+stable_cpgs_all_evidence %>%
+	count(Trait) %>%
+	arrange(desc(n)) %>%
+	knitr::kable()
+
+DT::datatable(
+stable_cpgs_all_evidence %>%
+	group_by(Trait) %>%
+	summarise(
+		associated_CpGs = paste(unique(cpg), collapse = ", "),
+		n_associations_reported = n(),
+		n_unique_CpGs = length(unique(cpg))
+	) %>%
+	arrange(desc(n_associations_reported))
+)
+```
+
+Interestingly, there are some CpGs that are found in associations with many traits:
+
+```{r}
+DT::datatable(
+stable_cpgs_all_evidence %>%
+	group_by(cpg) %>%
+	summarise(
+		associated_traits = paste(unique(Trait), collapse = ", "),
+		n_associations_reported = n(),
+		n_unique_traits = length(unique(Trait))
+	) %>% arrange(desc(n_unique_traits))
+)
+```
