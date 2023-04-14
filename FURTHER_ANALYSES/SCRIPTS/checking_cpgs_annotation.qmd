@@ -37,7 +37,7 @@ cpgs_stable <- suppressMessages(read_csv2(
 ))
 
 cpgs_stable_tidy <- cpgs_stable %>%
-	rename(min_clock = '6_cpg_clock') %>%
+	rename(min_clock = '5_cpg_clock') %>%
 	select(cpg:min_clock, CHR, MAPINFO) %>%
 	mutate(
 		CHR = as.factor(CHR)

@@ -11,7 +11,7 @@
 
 <meta name="author" content="jro049" />
 
-<meta name="date" content="2023-03-10" />
+<meta name="date" content="2023-04-14" />
 
 <title>explore_data.R</title>
 
@@ -2994,7 +2994,7 @@ display: none;
 
 <h1 class="title toc-ignore">explore_data.R</h1>
 <h4 class="author">jro049</h4>
-<h4 class="date">2023-03-10</h4>
+<h4 class="date">2023-04-14</h4>
 
 </div>
 
@@ -3002,7 +3002,7 @@ display: none;
 <pre class="r"><code># DESCRIPTION: Checking the data, exploring, rough analyses
 # AUTHOR: Julia Romanowska
 # DATE CREATED: 2022-10-18
-# DATE MODIFIED:
+# DATE MODIFIED: 2023-04-14
 
 # SETUP ----
 library(karyoploteR)</code></pre>
@@ -3039,7 +3039,7 @@ library(tidyverse)</code></pre>
 <pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2
 ## ──</code></pre>
 <pre><code>## ✔ ggplot2 3.4.1     ✔ purrr   1.0.1
-## ✔ tibble  3.1.8     ✔ dplyr   1.1.0
+## ✔ tibble  3.2.1     ✔ dplyr   1.1.0
 ## ✔ tidyr   1.3.0     ✔ stringr 1.5.0
 ## ✔ readr   2.1.4     ✔ forcats 1.0.0
 ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
@@ -3065,11 +3065,11 @@ cpgs_stable &lt;- read_csv2(here(&quot;DATA&quot;, &quot;3_stabsel_cpgs_anno.csv
 ## Delimiter: &quot;;&quot;
 ## chr (32): cpg, AlleleA_ProbeSeq, AlleleB_ProbeSeq, Infinium_Design_Type, Nex...
 ## dbl (11): select_prob, AddressA_ID, AddressB_ID, Genome_Build, CHR, MAPINFO,...
-## lgl  (6): 6_cpg_clock, Phantom4_Enhancers, 450k_Enhancer, Methyl27_Loci, Met...
+## lgl  (6): 5_cpg_clock, Phantom4_Enhancers, 450k_Enhancer, Methyl27_Loci, Met...
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>cpgs_stable_tidy &lt;- cpgs_stable %&gt;%
-    rename(min_clock = &#39;6_cpg_clock&#39;) %&gt;%
+    rename(min_clock = &#39;5_cpg_clock&#39;) %&gt;%
     select(cpg:min_clock, CHR, MAPINFO) %&gt;%
     mutate(
         CHR = as.factor(CHR)
@@ -3082,13 +3082,13 @@ cpgs_stable_tidy</code></pre>
 ##  2 cg18183624       0.996 TRUE      17     47076904
 ##  3 cg25975961       0.969 TRUE      7     150600818
 ##  4 cg20320200       0.949 FALSE     1     217030433
-##  5 cg11387576       0.941 FALSE     9      18260848
+##  5 cg11387576       0.941 TRUE      9      18260848
 ##  6 cg11579708       0.934 FALSE     10     13142679
 ##  7 cg21180953       0.902 TRUE      18     42489607
 ##  8 cg09709426       0.881 FALSE     3      45911521
 ##  9 cg07533333       0.86  FALSE     15     59793834
 ## 10 cg07749613       0.852 FALSE     2      97073539
-## # … with 14 more rows</code></pre>
+## # ℹ 14 more rows</code></pre>
 <pre class="r"><code>cpgs_stable_tidy_GRanges &lt;- makeGRangesFromDataFrame(
         as.data.frame(cpgs_stable_tidy) %&gt;%
             select(seqnames = CHR, start = MAPINFO, everything()) %&gt;%
@@ -3106,7 +3106,7 @@ cpgs_stable_tidy_GRanges</code></pre>
 ##    [2]    chr17   47076904-47076905      * |  cg18183624       0.996      TRUE
 ##    [3]     chr7 150600818-150600819      * |  cg25975961       0.969      TRUE
 ##    [4]     chr1 217030433-217030434      * |  cg20320200       0.949     FALSE
-##    [5]     chr9   18260848-18260849      * |  cg11387576       0.941     FALSE
+##    [5]     chr9   18260848-18260849      * |  cg11387576       0.941      TRUE
 ##    ...      ...                 ...    ... .         ...         ...       ...
 ##   [20]    chr19   45976195-45976196      * |  cg12542255       0.771     FALSE
 ##   [21]    chr10   22546132-22546133      * |  cg20734092       0.760     FALSE
@@ -3250,8 +3250,8 @@ skimr::skim(cpgs_stable_tidy)</code></pre>
 <td align="left">min_clock</td>
 <td align="right">0</td>
 <td align="right">1</td>
-<td align="right">0.17</td>
-<td align="left">FAL: 20, TRU: 4</td>
+<td align="right">0.21</td>
+<td align="left">FAL: 19, TRU: 5</td>
 </tr>
 </tbody>
 </table>
@@ -3549,45 +3549,45 @@ regul_regs %&gt;%
     distinct(regulatory_stable_id, epigenome_name, epigenome_description, cpg_id,
                      feature_type_name, activity)</code></pre>
 <pre><code>## # A tibble: 19 × 6
-##    regulatory_stable_id epigenome_name  epigenome_descr…¹ cpg_id featu…² activ…³
-##    &lt;chr&gt;                &lt;chr&gt;           &lt;chr&gt;             &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  
-##  1 ENSR00000095417      EB (CB)         BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  2 ENSR00000095417      HUVEC-prol (CB) BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  3 ENSR00000095417      M0 (CB)         BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  4 ENSR00000095417      M1 (CB)         BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  5 ENSR00000095417      M2 (CB)         BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  6 ENSR00000095417      monocyte (CB)   BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  7 ENSR00000095417      neutrophil (CB) BLUEPRINT Epigen… cg181… Promot… ACTIVE 
-##  8 ENSR00001902774      monocyte (CB)   BLUEPRINT Epigen… cg211… Promot… ACTIVE 
-##  9 ENSR00001658177      CD8+ ab T (CB)  BLUEPRINT Epigen… cg097… Enhanc… ACTIVE 
-## 10 ENSR00000195004      HUVEC-prol (CB) BLUEPRINT Epigen… cg126… Promot… ACTIVE 
-## 11 ENSR00000195004      M1 (CB)         BLUEPRINT Epigen… cg126… Promot… ACTIVE 
-## 12 ENSR00000195004      M2 (CB)         BLUEPRINT Epigen… cg126… Promot… ACTIVE 
-## 13 ENSR00000195004      monocyte (CB)   BLUEPRINT Epigen… cg126… Promot… ACTIVE 
-## 14 ENSR00000055701      monocyte (CB)   BLUEPRINT Epigen… cg129… Promot… ACTIVE 
-## 15 ENSR00000007928      HUVEC-prol (CB) BLUEPRINT Epigen… cg203… Promot… ACTIVE 
-## 16 ENSR00001912322      HUVEC-prol (CB) BLUEPRINT Epigen… cg125… Promot… ACTIVE 
-## 17 ENSR00001912322      M0 (CB)         BLUEPRINT Epigen… cg125… Promot… ACTIVE 
-## 18 ENSR00001912322      M1 (CB)         BLUEPRINT Epigen… cg125… Promot… ACTIVE 
-## 19 ENSR00001912322      M2 (CB)         BLUEPRINT Epigen… cg125… Promot… ACTIVE 
-## # … with abbreviated variable names ¹​epigenome_description, ²​feature_type_name,
-## #   ³​activity</code></pre>
+##    regulatory_stable_id epigenome_name  epigenome_description             cpg_id
+##    &lt;chr&gt;                &lt;chr&gt;           &lt;chr&gt;                             &lt;chr&gt; 
+##  1 ENSR00000095417      EB (CB)         BLUEPRINT Epigenome for erythrob… cg181…
+##  2 ENSR00000095417      HUVEC-prol (CB) BLUEPRINT Epigenome for endothel… cg181…
+##  3 ENSR00000095417      M0 (CB)         BLUEPRINT Epigenome for macropha… cg181…
+##  4 ENSR00000095417      M1 (CB)         BLUEPRINT Epigenome for inflamma… cg181…
+##  5 ENSR00000095417      M2 (CB)         BLUEPRINT Epigenome for alternat… cg181…
+##  6 ENSR00000095417      monocyte (CB)   BLUEPRINT Epigenome for CD14-pos… cg181…
+##  7 ENSR00000095417      neutrophil (CB) BLUEPRINT Epigenome for mature n… cg181…
+##  8 ENSR00001902774      monocyte (CB)   BLUEPRINT Epigenome for CD14-pos… cg211…
+##  9 ENSR00001658177      CD8+ ab T (CB)  BLUEPRINT Epigenome for CD8-posi… cg097…
+## 10 ENSR00000195004      HUVEC-prol (CB) BLUEPRINT Epigenome for endothel… cg126…
+## 11 ENSR00000195004      M1 (CB)         BLUEPRINT Epigenome for inflamma… cg126…
+## 12 ENSR00000195004      M2 (CB)         BLUEPRINT Epigenome for alternat… cg126…
+## 13 ENSR00000195004      monocyte (CB)   BLUEPRINT Epigenome for CD14-pos… cg126…
+## 14 ENSR00000055701      monocyte (CB)   BLUEPRINT Epigenome for CD14-pos… cg129…
+## 15 ENSR00000007928      HUVEC-prol (CB) BLUEPRINT Epigenome for endothel… cg203…
+## 16 ENSR00001912322      HUVEC-prol (CB) BLUEPRINT Epigenome for endothel… cg125…
+## 17 ENSR00001912322      M0 (CB)         BLUEPRINT Epigenome for macropha… cg125…
+## 18 ENSR00001912322      M1 (CB)         BLUEPRINT Epigenome for inflamma… cg125…
+## 19 ENSR00001912322      M2 (CB)         BLUEPRINT Epigenome for alternat… cg125…
+## # ℹ 2 more variables: feature_type_name &lt;chr&gt;, activity &lt;chr&gt;</code></pre>
 <pre class="r"><code># only the &#39;minimal clock&#39; probes
 regul_regs_min_clock &lt;- regul_regs %&gt;%
         right_join(cpgs_stable_tidy %&gt;% filter(min_clock), by = c(&quot;cpg_id&quot; = &quot;cpg&quot;))
 DT::datatable(regul_regs_min_clock)</code></pre>
-<div class="datatables html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-83461354f4f072ee491c" style="width:100%;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-83461354f4f072ee491c">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40"],["ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774"],[12,12,12,12,12,12,12,12,17,17,17,17,17,17,17,17,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,18,18,18,18,18,18,18,18],[125000200,125000200,125000200,125000200,125000200,125000200,125000200,125000200,47071600,47071600,47071600,47071600,47071600,47071600,47071600,47071600,150597802,150597802,150597802,150597802,150597802,150597802,150597802,150597802,150600801,150600801,150600801,150600801,150600801,150600801,150600801,150600801,42488802,42488802,42488802,42488802,42488802,42488802,42488802,42488802],[125004001,125004001,125004001,125004001,125004001,125004001,125004001,125004001,47082001,47082001,47082001,47082001,47082001,47082001,47082001,47082001,150601799,150601799,150601799,150601799,150601799,150601799,150601799,150601799,150601000,150601000,150601000,150601000,150601000,150601000,150601000,150601000,42489799,42489799,42489799,42489799,42489799,42489799,42489799,42489799],["Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region"],["Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region"],["SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952"],["INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","REPRESSED",null,null,null,null,null,null,null,null,"POISED","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","ACTIVE","INACTIVE"],["CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)"],["BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood"],["cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953"],[1,1,1,1,1,1,1,1,0.996,0.996,0.996,0.996,0.996,0.996,0.996,0.996,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.902,0.902,0.902,0.902,0.902,0.902,0.902,0.902],[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],["12","12","12","12","12","12","12","12","17","17","17","17","17","17","17","17","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","18","18","18","18","18","18","18","18"],[125002007,125002007,125002007,125002007,125002007,125002007,125002007,125002007,47076904,47076904,47076904,47076904,47076904,47076904,47076904,47076904,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,42489607,42489607,42489607,42489607,42489607,42489607,42489607,42489607]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>regulatory_stable_id<\/th>\n      <th>chromosome_name<\/th>\n      <th>chromosome_start<\/th>\n      <th>chromosome_end<\/th>\n      <th>feature_type_name<\/th>\n      <th>feature_type_description<\/th>\n      <th>so_accession<\/th>\n      <th>activity<\/th>\n      <th>epigenome_name<\/th>\n      <th>epigenome_description<\/th>\n      <th>cpg_id<\/th>\n      <th>select_prob<\/th>\n      <th>min_clock<\/th>\n      <th>CHR<\/th>\n      <th>MAPINFO<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[2,3,4,12,15]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div class="datatables html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-b54a719d865b7913a840" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-b54a719d865b7913a840">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48"],["ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00001046350","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00000095417","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00001734862","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00000414350","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001448127","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774","ENSR00001902774"],[12,12,12,12,12,12,12,12,17,17,17,17,17,17,17,17,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,9,9,9,9,9,9,9,9,18,18,18,18,18,18,18,18],[125000200,125000200,125000200,125000200,125000200,125000200,125000200,125000200,47071600,47071600,47071600,47071600,47071600,47071600,47071600,47071600,150597802,150597802,150597802,150597802,150597802,150597802,150597802,150597802,150600801,150600801,150600801,150600801,150600801,150600801,150600801,150600801,18260201,18260201,18260201,18260201,18260201,18260201,18260201,18260201,42488802,42488802,42488802,42488802,42488802,42488802,42488802,42488802],[125004001,125004001,125004001,125004001,125004001,125004001,125004001,125004001,47082001,47082001,47082001,47082001,47082001,47082001,47082001,47082001,150601799,150601799,150601799,150601799,150601799,150601799,150601799,150601799,150601000,150601000,150601000,150601000,150601000,150601000,150601000,150601000,18261800,18261800,18261800,18261800,18261800,18261800,18261800,18261800,42489799,42489799,42489799,42489799,42489799,42489799,42489799,42489799],["Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","CTCF Binding Site","Enhancer","Enhancer","Enhancer","Enhancer","Enhancer","Enhancer","Enhancer","Enhancer","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region","Promoter Flanking Region"],["Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","CTCF binding site","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted enhancer region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region","Predicted promoter flanking region"],["SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0000167","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0001974","SO:0000165","SO:0000165","SO:0000165","SO:0000165","SO:0000165","SO:0000165","SO:0000165","SO:0000165","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952","SO:0001952"],["INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","ACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","REPRESSED",null,null,null,null,null,null,null,null,"INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","POISED","INACTIVE","INACTIVE","INACTIVE","INACTIVE","INACTIVE","ACTIVE","INACTIVE"],["CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)","CD8+ ab T (CB)","EB (CB)","HUVEC-prol (CB)","M0 (CB)","M1 (CB)","M2 (CB)","monocyte (CB)","neutrophil (CB)"],["BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood","BLUEPRINT Epigenome for CD8-positive, alpha-beta T cell from cord blood","BLUEPRINT Epigenome for erythroblast from cord blood","BLUEPRINT Epigenome for endothelial cell of umbilical vein (proliferating) from cord blood","BLUEPRINT Epigenome for macrophage from cord blood","BLUEPRINT Epigenome for inflammatory macrophage from cord blood","BLUEPRINT Epigenome for alternatively activated macrophage from cord blood","BLUEPRINT Epigenome for CD14-positive, CD16-negative classical monocyte from cord blood","BLUEPRINT Epigenome for mature neutrophil from cord blood"],["cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg04347477","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg18183624","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg25975961","cg11387576","cg11387576","cg11387576","cg11387576","cg11387576","cg11387576","cg11387576","cg11387576","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953","cg21180953"],[1,1,1,1,1,1,1,1,0.996,0.996,0.996,0.996,0.996,0.996,0.996,0.996,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.969,0.941,0.941,0.941,0.941,0.941,0.941,0.941,0.941,0.902,0.902,0.902,0.902,0.902,0.902,0.902,0.902],[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],["12","12","12","12","12","12","12","12","17","17","17","17","17","17","17","17","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","9","9","9","9","9","9","9","9","18","18","18","18","18","18","18","18"],[125002007,125002007,125002007,125002007,125002007,125002007,125002007,125002007,47076904,47076904,47076904,47076904,47076904,47076904,47076904,47076904,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,150600818,18260848,18260848,18260848,18260848,18260848,18260848,18260848,18260848,42489607,42489607,42489607,42489607,42489607,42489607,42489607,42489607]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>regulatory_stable_id<\/th>\n      <th>chromosome_name<\/th>\n      <th>chromosome_start<\/th>\n      <th>chromosome_end<\/th>\n      <th>feature_type_name<\/th>\n      <th>feature_type_description<\/th>\n      <th>so_accession<\/th>\n      <th>activity<\/th>\n      <th>epigenome_name<\/th>\n      <th>epigenome_description<\/th>\n      <th>cpg_id<\/th>\n      <th>select_prob<\/th>\n      <th>min_clock<\/th>\n      <th>CHR<\/th>\n      <th>MAPINFO<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[2,3,4,12,15]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <pre class="r"><code>regul_regs_min_clock %&gt;%
     distinct(regulatory_stable_id, feature_type_name, cpg_id)</code></pre>
-<pre><code>## # A tibble: 5 × 3
+<pre><code>## # A tibble: 6 × 3
 ##   regulatory_stable_id feature_type_name        cpg_id    
 ##   &lt;chr&gt;                &lt;chr&gt;                    &lt;chr&gt;     
 ## 1 ENSR00001046350      Promoter                 cg04347477
 ## 2 ENSR00000095417      Promoter                 cg18183624
 ## 3 ENSR00001734862      Promoter Flanking Region cg25975961
 ## 4 ENSR00000414350      CTCF Binding Site        cg25975961
-## 5 ENSR00001902774      Promoter Flanking Region cg21180953</code></pre>
+## 5 ENSR00001448127      Enhancer                 cg11387576
+## 6 ENSR00001902774      Promoter Flanking Region cg21180953</code></pre>
 <pre class="r"><code>## genes ----
 if(!file.exists(genes_regs_file)){
     my_attribs &lt;- c(
@@ -3622,28 +3622,27 @@ if(!file.exists(genes_regs_file)){
 
 genes_regs</code></pre>
 <pre><code>## # A tibble: 18 × 7
-##    ensembl_gene_id chromosome_name start_position end_p…¹ descr…² exter…³ cpg_id
-##    &lt;chr&gt;                     &lt;int&gt;          &lt;int&gt;   &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt; 
-##  1 ENSG00000196498              12      124808961  1.25e8 nuclea… NCOR2   cg043…
-##  2 ENSG00000159217              17       47074774  4.71e7 insuli… IGF2BP1 cg181…
-##  3 ENSG00000196482               1      216676588  2.17e8 estrog… ESRRG   cg203…
-##  4 ENSG00000196482               1      216676588  2.17e8 estrog… ESRRG   cg018…
-##  5 ENSG00000123240              10       13141449  1.32e7 optine… OPTN    cg115…
-##  6 ENSG00000152217              18       42260138  4.26e7 SET bi… SETBP1  cg211…
-##  7 ENSG00000163818               3       45864808  4.60e7 leucin… LZTFL1  cg097…
-##  8 ENSG00000157470              15       59664892  5.98e7 family… FAM81A  cg075…
-##  9 ENSG00000180448              19        1065922  1.09e6 histoc… HMHA1   cg107…
-## 10 ENSG00000128283              22       37956454  3.80e7 CDC42 … CDC42E… cg025…
-## 11 ENSG00000196482               1      216676588  2.17e8 estrog… ESRRG   cg203…
-## 12 ENSG00000196482               1      216676588  2.17e8 estrog… ESRRG   cg018…
-## 13 ENSG00000090238              16       30103635  3.01e7 yippee… YPEL3   cg163…
-## 14 ENSG00000012061              19       45910591  4.60e7 excisi… ERCC1   cg125…
-## 15 ENSG00000125740              19       45971253  4.60e7 FBJ mu… FOSB    cg125…
-## 16 ENSG00000084710               2       25264999  2.54e7 EFR3 h… EFR3B   cg124…
-## 17 ENSG00000173020              11       67033881  6.71e7 adrene… ADRBK1  cg114…
-## 18 ENSG00000128040               4       57676026  5.77e7 serine… SPINK2  cg035…
-## # … with abbreviated variable names ¹​end_position, ²​description,
-## #   ³​external_gene_name</code></pre>
+##    ensembl_gene_id chromosome_name start_position end_position description      
+##    &lt;chr&gt;                     &lt;int&gt;          &lt;int&gt;        &lt;int&gt; &lt;chr&gt;            
+##  1 ENSG00000196498              12      124808961    125052135 nuclear receptor…
+##  2 ENSG00000159217              17       47074774     47133012 insulin-like gro…
+##  3 ENSG00000196482               1      216676588    217311097 estrogen-related…
+##  4 ENSG00000196482               1      216676588    217311097 estrogen-related…
+##  5 ENSG00000123240              10       13141449     13180291 optineurin [Sour…
+##  6 ENSG00000152217              18       42260138     42648475 SET binding prot…
+##  7 ENSG00000163818               3       45864808     45957534 leucine zipper t…
+##  8 ENSG00000157470              15       59664892     59815748 family with sequ…
+##  9 ENSG00000180448              19        1065922      1086627 histocompatibili…
+## 10 ENSG00000128283              22       37956454     37965412 CDC42 effector p…
+## 11 ENSG00000196482               1      216676588    217311097 estrogen-related…
+## 12 ENSG00000196482               1      216676588    217311097 estrogen-related…
+## 13 ENSG00000090238              16       30103635     30108236 yippee-like 3 (D…
+## 14 ENSG00000012061              19       45910591     45982086 excision repair …
+## 15 ENSG00000125740              19       45971253     45978437 FBJ murine osteo…
+## 16 ENSG00000084710               2       25264999     25378243 EFR3 homolog B (…
+## 17 ENSG00000173020              11       67033881     67054027 adrenergic, beta…
+## 18 ENSG00000128040               4       57676026     57687908 serine peptidase…
+## # ℹ 2 more variables: external_gene_name &lt;chr&gt;, cpg_id &lt;chr&gt;</code></pre>
 <pre class="r"><code>genes_regs %&gt;% count(cpg_id, sort = TRUE)</code></pre>
 <pre><code>## # A tibble: 15 × 2
 ##    cpg_id         n
@@ -3707,7 +3706,7 @@ regul_regs_GRanges &lt;- makeGRangesFromDataFrame(
     )
 
 genes_regs_GRanges &lt;- makeGRangesFromDataFrame(
-        as.data.frame(genes_regs) %&gt;%
+        as.data.frame(genes_regs %&gt;% distinct()) %&gt;%
             select(
                 seqnames = chromosome_name,
                 start = start_position,

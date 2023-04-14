@@ -1,7 +1,7 @@
 # DESCRIPTION: Checking the data, exploring, rough analyses
 # AUTHOR: Julia Romanowska
 # DATE CREATED: 2022-10-18
-# DATE MODIFIED:
+# DATE MODIFIED: 2023-04-14
 
 # SETUP ----
 library(karyoploteR)
@@ -17,7 +17,7 @@ genes_regs_file <- here("DATA", "all_genes_regs.rds")
 cpgs_stable <- read_csv2(here("DATA", "3_stabsel_cpgs_anno.csv"))
 
 cpgs_stable_tidy <- cpgs_stable %>%
-	rename(min_clock = '6_cpg_clock') %>%
+	rename(min_clock = '5_cpg_clock') %>%
 	select(cpg:min_clock, CHR, MAPINFO) %>%
 	mutate(
 		CHR = as.factor(CHR)
@@ -208,7 +208,7 @@ regul_regs_GRanges <- makeGRangesFromDataFrame(
 	)
 
 genes_regs_GRanges <- makeGRangesFromDataFrame(
-		as.data.frame(genes_regs) %>%
+		as.data.frame(genes_regs %>% distinct()) %>%
 			select(
 				seqnames = chromosome_name,
 				start = start_position,
