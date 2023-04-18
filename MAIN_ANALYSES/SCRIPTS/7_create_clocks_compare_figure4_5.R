@@ -68,6 +68,9 @@ plots <- list()
 for (i in length(cpg_order_r2):1){
   # Fit model to training set
   mod.gam <- gam(mod, data = tr)
+  
+  # Save gam object (stable clock)
+  save(mod.gam, file = paste("stable_clock", i , "cpg.RData", sep = "_"))
 
   # Predict in test set
   pred <- predict(mod.gam, newdata = stable_test[,1:i,drop=FALSE])
