@@ -5,7 +5,7 @@
 ## 
 ## Author: Kristine L Haftorn
 ## Date created: 2022.09.29
-## Date modified: 2023.02.27
+## Date modified: 2023.04.18
 
 # Load packages
 require(glmnet)
@@ -48,7 +48,7 @@ test <- cbind(GA_test, pred)
 test <- as.data.frame(test)
 colnames(test)[2]<-"pred"
 
-# Check predctive power
+# Check predictive power and create lists for R2 and MAD
 lmrob <- lmrob(test$GA_test~test$pred)
 
 r2_list <- numeric(length(cpg_order_r2)+1)
@@ -150,8 +150,8 @@ plot_comb <- plot_grid(r2, mad,
                        ncol = 2, nrow = 1)
 ggsave(plot_comb, file="Figure4_comb.jpeg", width=14, height=5, dpi=300)     
 
-# Create and save combined plot of "4 stable CpG clock" and "15 stable CpG clock"
-plot_clock_comb <- plot_grid(plots[[4]],plots[[15]], 
+# Create and save combined plot of "5 stable CpG clock" and "15 stable CpG clock"
+plot_clock_comb <- plot_grid(plots[[5]],plots[[15]], 
                        labels = c("a", "b"),
                        label_size = 40,
                        ncol = 2, nrow = 1) 
