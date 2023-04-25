@@ -51,7 +51,7 @@ for (i in 1:length(cpg_list)) {
     xlab("DNAm") +
     xlim(0, 1) +
     ylim(215,300) +
-    geom_smooth(size = 1.5, color = "#D55E00") +
+    stat_smooth(method = "gam", formula = y ~ s(x), size= 1.5, color = "#D55E00") +
     ggtitle(names(cpg_list)[i]) +
     annotate("text", x=240, y=1, label=TeX(paste("$R^2 = ",r2_list[i],", p < ",pval,"$", sep="")), size = 5, fontface="bold") +
     theme_classic(base_size = 18) +
