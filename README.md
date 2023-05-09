@@ -7,6 +7,9 @@ Contains scripts and supplementary data for the main analyses in the article, in
 ## FURTHER_ANALYSES
 Contains scripts and supplementary data for the downstream analyses of CpGs that were identified as stably predictive.
 
+## STABLE_CLOCKS
+Contains the epigenetic gestational age clocks developed in the article and a brief explanation on how to apply them to DNA methylation data.
+
 # References
 Meinshausen N, Bühlmann P. Stability selection. Journal of the Royal Statistical Society: Series B (Statistical Methodology). 2010;72(4):417-73.
 Wood  SN. Generalized Additive Models: An Introduction with R. 2nd ed: Chapman and Hall/CRC; 2017.
