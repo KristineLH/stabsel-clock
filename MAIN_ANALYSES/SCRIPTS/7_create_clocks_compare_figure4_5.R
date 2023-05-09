@@ -5,7 +5,7 @@
 ## 
 ## Author: Kristine L Haftorn
 ## Date created: 2022.09.29
-## Date modified: 2023.04.18
+## Date modified: 2023.05.09
 
 # Load packages
 require(glmnet)
@@ -61,14 +61,25 @@ mad_list[16] <- round(median(abs(test$GA_test-test$pred)), digits = 3)
 tr <- cbind(stable_tr, GA_tr)
 tr = as.data.frame(tr)
 
+# Anynomize sample IDs in tr
+hash_id <- function(id, length) substr(digest::digest(id, algo = "sha256", serialize = FALSE), 1, length)
+new_ids <- lapply(rownames(tr), hash_id, length = 8)
+rownames(tr) <- new_ids
+
+# Define model
 cpg.s <- paste("-s(", cpg_order_r2,")", sep="")
 mod <- as.formula(paste("GA_tr", paste("s(", cpg_order_r2,")", sep="", collapse = "+"), sep="~"))
 
+# Create empty plots list
 plots <- list()
+
+# Fit models, predict and make plots for each stable clock
 for (i in length(cpg_order_r2):1){
   # Fit model to training set
   mod.gam <- gam(mod, data = tr)
-  
+  # Remove input data and residuals from mod.gam
+  mod.gam$model <- NULL
+  mod.gam$residuals <- NULL
   # Save gam object (stable clock)
   save(mod.gam, file = paste("stable_clock", i , "cpg.RData", sep = "_"))
 
