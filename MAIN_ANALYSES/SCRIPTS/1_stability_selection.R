@@ -21,7 +21,7 @@ y <- as.numeric(GA)
 set.seed(1105)
 mod.cv <- cv.glmnet(x = x, y = y, alpha = 1, nfold = 10)
 
-save(mod.cv, file = "mod_cv.Rdata")
+save(mod.cv, file = "mod_cv.RData")
 
 ## Stability selection
 # Define subsample size
@@ -51,6 +51,6 @@ require(parallel)
 result <- mclapply(1:B, FUN = stabsel, mc.cores = 10)
 
 ## Save results
-saveRDS(result, file = "stabsel_result.Rdata")
+saveRDS(result, file = "stabsel_result.RData")
 
 
