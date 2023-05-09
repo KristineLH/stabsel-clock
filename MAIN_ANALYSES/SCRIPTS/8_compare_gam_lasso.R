@@ -5,7 +5,7 @@
 ## 
 ## Author: Kristine L Haftorn
 ## Date created: 2022.09.29
-## Date modified: 2023.04.18
+## Date modified: 2023.05.09
 ##
 
 # Load packages
@@ -15,15 +15,13 @@ require(mgcv)
 require(ggplot2)
 
 ## Load data
-# DNAm_tr <- Data frame with DNAm data for the training set: samples (rows) by CpGs (columns)
-# GA_tr <- Vector of GA matching the samples in DNAm_tr
 # DNAm_test <- Data frame with DNAm data for the test set: samples (rows) by CpGs (columns)
 # GA_test <- Vector of GA matching the samples in DNAm_test
 load(file="cpg_order_r2.RData") # Generated in 6_DNAm-GA_figure3.R
 
 ## Load clocks
 # Lasso clock
-load(file="lasso_clock_mod.cv.Ddata") # Generated in 7_create_clocks_compare_figure4_5.R
+load(file="lasso_clock_mod.cv.RData") # Generated in 7_create_clocks_compare_figure4_5.R
 # GAM clock (15 stable CpG GA clock)
 load(file="stable_clock_15_cpg.RData") # Generated in 7_create_clocks_compare_figure4_5.R
 
@@ -47,7 +45,7 @@ test <- as.data.frame(test)
 gam_mod=lmrob(test$GA_test~test$pred_gam)
 summary(gam_mod)
 
-## Combine data
+## Combine data (here you insert the number of samples in your test set instead of 429)
 df <- data.frame(y = rep(test$GA_test,2),
                  x = c(test$pred_gam, test$pred_lasso),
                  method = as.factor(c(rep("GAM model (15 CpGs)",429), rep("Lasso model (233 CpGs)",429))))
@@ -61,13 +59,13 @@ comp <- ggplot(data=df, aes(x=x, y=y, col = method)) +
   ylab("Gestational age (ultrasound)") +
   ylim(220, 301) +
   xlim(220,301) +
-  geom_abline(aes(intercept=0, slope=1, colour="black"), colour="black", size=2, show.legend=TRUE) +
-  geom_abline(aes(intercept= 3.45777, slope=0.98691, colour="#D55E00"), colour="#D55E00", size=2, show.legend=TRUE) + #GAM 15 CpG
-  geom_abline(aes(intercept=-46.05759, slope=1.16295, colour="#0072B2"), colour="#0072B2", size=2, show.legend=TRUE) + #lasso
+  geom_abline(aes(intercept=0, slope=1, colour="Ideal fit"), size=2, show.legend=TRUE) +
+  geom_abline(aes(intercept= 3.45777, slope=0.98691, colour="GAM model (15 CpGs)"), size=2, show.legend=TRUE) + 
+  geom_abline(aes(intercept=-46.05759, slope=1.16295, colour="Lasso model (233 CpGs)"), size=2, show.legend=TRUE) +
   scale_colour_manual(values = mycolors) +
   theme_classic(base_size = 30) +
   theme(
-    legend.position = c(0.75,0.2),
+    legend.position = c(0.75,0.15
     legend.title = element_blank(),
     axis.text=element_text(face="bold", colour = "black"),
     axis.line = element_line(size=1.5),
