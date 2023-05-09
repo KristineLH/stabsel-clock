@@ -1,5 +1,5 @@
 ########################################################
-## Title: Indentify CpGs that are stably predictive of gestational age
+## Title: Identify CpGs that are stably predictive of gestational age
 ## Description: 
 ## Data: Newborn cord blood EPIC DNAm data
 ## 
@@ -11,9 +11,9 @@
 # DNAm <- Data frame with DNAm data: samples (rows) by CpGs (columns)
 cpg_names <- colnames(DNAm)
 
-## Load results from stability selection and permutation
-stabsel_result <- readRDS("stabsel_result.Rdata")
-permut_result <- readRDS("permut_result.Rdata")
+## Load results from stability selection and permutation (generated in 1_stability_selection.R and 2_permutation.R)
+stabsel_result <- readRDS("stabsel_result.RData")
+permut_result <- readRDS("permut_result.RData")
 
 ## Compute average number of selected variables (q_stab)
 p_list <- list()
@@ -75,7 +75,7 @@ table <- data.frame(
   n_cpgs = n_cpgs)
 
 # Threshold when allowing for a maximum of 2 false discoveries (E_v)
-# Comment: The optimal threshold should be chosen based on the data, balancing E(V) and number of CpGs
+# Comment: The optimal threshold should be chosen based on the data, by balancing E(V) and number of CpGs
 thresh_EV2 <- finding_thresh(q=q_stab, p=p_var, E_v=2)
 
 # Subset results above threshold
