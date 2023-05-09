@@ -19,7 +19,7 @@ require(glmnet)
 x <- as.matrix(DNAm)
 y <- as.numeric(GA)
 
-load(file = "mod_cv.Rdata")
+load(file = "mod_cv.RDta") # Generated in 1_stability_selection.R
 
 ## Permutation
 # Define subsample size
@@ -51,4 +51,4 @@ require(parallel)
 result <- mclapply(1:B, FUN = permut, mc.cores = 10)
 
 ## Save results
-saveRDS(result, file="permut_result.Rdata")
+saveRDS(result, file="permut_result.RDta")
