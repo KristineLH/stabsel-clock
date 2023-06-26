@@ -18,7 +18,7 @@ require(cowplot)
 load(file="thresh_EV2.RData") # Chosen selection probability threshold
 load(file = "select_prob.RData") # CpGs with selection probabilities
 cpgs <- select_prob
-colnames(cpgs)[1] <- "Name"
+colnames(cpgs)[1] <- "cpgs"
 
 # Load clock data
 knight <- read.csv(file="Knight_clock.csv")
@@ -73,7 +73,7 @@ Haftorn_p <- ggplot(data = haftorn, aes(x = comb, y = pi_select, col = stable)) 
   xlim(-0.15,0.15) +
   geom_hline(yintercept = thresh_EV2, size=1.2, linetype="dashed") +
   geom_hline(yintercept = 0.5, size=1) +
-  ggtitle("CpGs in the Haftorn clock (n = 176)") +
+  ggtitle("The Haftorn clock (176 CpGs)") +
   theme_classic(base_size = 18) +
   theme(
     legend.position = "none",
@@ -96,7 +96,7 @@ Bohlin_p <- ggplot(data = bohlin, aes(x = comb, y = pi_select, col = stable)) +
   xlim(-0.2,0.2) +
   geom_hline(yintercept = thresh_EV2, size=1.2, linetype="dashed") +
   geom_hline(yintercept = 0.5, size=1) +
-  ggtitle("Bohlin clock (n = 86)") +
+  ggtitle("The Bohlin clock (86 CpGs)") +
   theme_classic(base_size = 18) +
   theme(
     legend.position = "none",
@@ -119,7 +119,7 @@ Knight_p <- ggplot(data = knight, aes(x = comb, y = pi_select, col = stable)) +
   xlim(-0.05,0.05) +
   geom_hline(yintercept = thresh_EV2, size=1.2, linetype="dashed") +
   geom_hline(yintercept = 0.5, size=1) +
-  ggtitle("Knight clock (n = 140)") +
+  ggtitle("The Knight clock (140 CpGs)") +
   theme_classic(base_size = 18) +
   theme(
     legend.position = "none",
