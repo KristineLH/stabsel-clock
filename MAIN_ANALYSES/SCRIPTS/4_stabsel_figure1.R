@@ -24,7 +24,6 @@ anno <- fread("anno_MethylationEPIC_v-1-0_B4.csv", data.table = F)
 anno$Name <- as.character(anno$Name)
 result <- subset(anno,anno$Name %in% cpgs$Name)
 result <- merge(x = result, y = cpgs[,c("Name","pi_select")], by = "Name")
-result <- anno
 result$CHR <- as.numeric(result$CHR)
 
 # Compute cumulative position of CpGs
