@@ -14,6 +14,10 @@ Checking data, tidying, and fetching annotations from ensembl.
 
 The report gathering and explaining the results - check the `.html` output.
 
+## `GOmeth_analysis.R`
+
+Gene set enrichment analysis.
+
 ## RESULTS
 
 Output from Reactome.org.
