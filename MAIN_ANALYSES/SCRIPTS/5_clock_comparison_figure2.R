@@ -89,7 +89,7 @@ bohlin$stable <- "no"
 bohlin$stable[bohlin$pi_select > thresh_EV2]<- "yes"
 Bohlin_p <- ggplot(data = bohlin, aes(x = comb, y = pi_select, col = stable)) +
   geom_point(shape = 8) +
-  scale_colour_manual(values=c("no" = "black", "yes" = "#D55E00")) +
+  scale_colour_manual(values=c("no" = "#0072B2", "yes" = "#D55E00")) +
   xlab("Beta coefficient x DNAm variance")+
   ylab("Selection probability") +
   ylim(0, 1) +
@@ -112,7 +112,7 @@ knight$stable <- "no"
 knight$stable[knight$pi_select > thresh_EV2]<- "yes"
 Knight_p <- ggplot(data = knight, aes(x = comb, y = pi_select, col = stable)) +
   geom_point(shape = 8) +
-  scale_colour_manual(values=c("no"="black", "yes" = "#D55E00")) +
+  scale_colour_manual(values=c("no"="#0072B2", "yes" = "#D55E00")) +
   xlab("Beta coefficient x DNAm variance")+
   ylab("Selection probability") +
   ylim(0, 1) +
