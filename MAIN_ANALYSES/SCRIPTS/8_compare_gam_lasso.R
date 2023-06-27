@@ -65,7 +65,7 @@ comp <- ggplot(data=df, aes(x=x, y=y, col = method)) +
   scale_colour_manual(values = mycolors) +
   theme_classic(base_size = 30) +
   theme(
-    legend.position = c(0.75,0.15
+    legend.position = c(0.75,0.15),
     legend.title = element_blank(),
     axis.text=element_text(face="bold", colour = "black"),
     axis.line = element_line(size=1.5),
