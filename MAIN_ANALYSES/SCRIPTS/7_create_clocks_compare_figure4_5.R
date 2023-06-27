@@ -19,7 +19,6 @@ require(cowplot)
 # GA_tr <- Vector of GA matching the samples in DNAm_tr
 # DNAm_test <- Data frame with DNAm data for the test set: samples (rows) by CpGs (columns)
 # GA_test <- Vector of GA matching the samples in DNAm_test
-stable_set <- (file="stable_cpgs_EV2.csv") # Generated in 3_identify_stable_cpgs.R
 load(file="cpg_order_r2.RData") # Generated in 6_DNAm-GA_figure3.R
 
 stable_tr <- DNAm_tr[,cpg_order_r2]
