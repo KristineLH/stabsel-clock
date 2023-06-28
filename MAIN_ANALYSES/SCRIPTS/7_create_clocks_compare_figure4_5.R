@@ -11,6 +11,7 @@
 require(glmnet)
 require(robustbase)
 require(mgcv)
+require(latex2exp)
 require(ggplot2)
 require(cowplot)
 
