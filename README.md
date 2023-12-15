@@ -12,5 +12,7 @@ Contains the epigenetic gestational age clocks developed in the article and a br
 
 # References
 Haftorn KL, Romanowska J, Lee Y, et al. Stability selection enhances feature selection and enables accurate prediction of gestational age using only five DNA methylation sites. Clin Epigenetics. 2023;15(1):114.
+
 Meinshausen N, Bühlmann P. Stability selection. Journal of the Royal Statistical Society: Series B (Statistical Methodology). 2010;72(4):417-73.
+
 Wood  SN. Generalized Additive Models: An Introduction with R. 2nd ed: Chapman and Hall/CRC; 2017.
